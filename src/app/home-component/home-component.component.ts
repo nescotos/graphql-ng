@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { NgForm }  from '@angular/forms';
 import {  Apollo } from 'apollo-angular';
 import gql from 'graphql-tag';
 
@@ -29,6 +30,16 @@ const GetPost = gql`
   }
 `;
 
+const CreatePost = gql`
+  mutation PostMutation($input: CreatePostInput!){
+    createPost(createPostInput: $input){
+      title
+      description
+      id
+    }
+  }
+`;
+
 @Component({
   selector: 'app-home-component',
   templateUrl: './home-component.component.html',
@@ -52,12 +63,31 @@ export class HomeComponentComponent implements OnInit, OnDestroy {
     .subscribe(({data, loading}) => {
       this.loading = loading;
       this.posts = data.getPosts;
-      console.log(this.posts);
     });
   }
 
   ngOnDestroy(){
     this.queryPost.unsubscribe();
+  }
+
+  onSubmit(f: NgForm){
+    console.log(f.value);
+    this.apollo.mutate({
+      mutation: CreatePost,
+      variables: {
+        input : {
+          title: f.value['title'],
+          description: f.value['description'],
+          userId: 1
+        }
+      }
+    })
+    .subscribe(({data}) => {
+      this.posts.unshift(data['createPost']);
+    }, (error: Error) => {
+      console.error(error.message);
+    });
+
   }
 
 }
